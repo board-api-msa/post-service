@@ -8,7 +8,11 @@ import me.junbyoung.PostService.repository.PostRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Service;
+
 import java.nio.file.AccessDeniedException;
 import java.util.List;
 
@@ -18,6 +22,9 @@ public class PostService {
 
     @Autowired
     private PostRepository postRepository;
+
+    @Autowired
+    private KafkaTemplate<String, Long> kafkaTemplate;
 
     public Post getPost(Long id) {
         return postRepository.findById(id)
@@ -52,7 +59,29 @@ public class PostService {
         if (!post.getUserId().equals(userId)) {
             throw new AccessDeniedException("You do not have permission to delete this post.");
         }
+        sendMessageToCommentService(post);
+    }
 
-        postRepository.delete(post);
+    @Transactional
+    @KafkaListener(topics = "user-events", groupId = "post-service-group")
+    public void deletePosts(Long userId, Acknowledgment acknowledgment) {
+        List<Post> posts = postRepository.findByUserId(userId);
+        for (Post post : posts) {
+            sendMessageToCommentService(post);
+        }
+        // 모든 작업이 성공적으로 완료된 후 오프셋 커밋
+        acknowledgment.acknowledge();
+    }
+
+    void sendMessageToCommentService(Post post) {
+        kafkaTemplate.send("post-events", post.getId())
+                .thenAccept(result -> {
+                    //카프카서버에 메시지가 저장되었을때만 삭제
+                    postRepository.delete(post);
+                })
+                .exceptionally(ex -> {
+                    LOGGER.warn("Failed to send message: {}", ex.getMessage());
+                    return null;
+                });
     }
 }
