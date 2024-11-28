@@ -3,7 +3,6 @@ package me.junbyoung.PostService.client.fallback;
 import me.junbyoung.PostService.client.CommentClient;
 import me.junbyoung.PostService.model.Comment;
 import org.springframework.stereotype.Component;
-
 import java.util.Collections;
 import java.util.List;
 

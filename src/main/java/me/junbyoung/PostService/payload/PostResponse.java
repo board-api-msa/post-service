@@ -3,7 +3,6 @@ package me.junbyoung.PostService.payload;
 import lombok.Getter;
 import me.junbyoung.PostService.model.Comment;
 import me.junbyoung.PostService.model.Post;
-
 import java.time.LocalDateTime;
 import java.util.List;
 

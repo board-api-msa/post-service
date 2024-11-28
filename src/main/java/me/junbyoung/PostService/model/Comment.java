@@ -1,7 +1,6 @@
 package me.junbyoung.PostService.model;
 
 import lombok.Getter;
-
 import java.time.LocalDateTime;
 
 @Getter
