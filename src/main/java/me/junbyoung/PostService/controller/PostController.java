@@ -10,6 +10,7 @@ import me.junbyoung.PostService.service.CommentService;
 import me.junbyoung.PostService.service.PostService;
 import me.junbyoung.PostService.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -19,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/api/posts") // 공통 경로 지정
@@ -41,7 +43,9 @@ public class PostController {
         CompletableFuture<List<Comment>> commentsFuture = CompletableFuture.supplyAsync(() -> commentService.getComments(postId));
         List<Comment> comments = commentsFuture.get();
 
-        return ResponseEntity.ok(new PostResponse(post, user.getName(), comments));
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.maxAge(600, TimeUnit.SECONDS).cachePublic())
+                .body(new PostResponse(post, user.getName(), comments));
     }
 
 
@@ -52,7 +56,9 @@ public class PostController {
             String userName = userService.getUserInfoByUserId(post.getUserId()).getName();
             posts.add(new PostResponse(post, userName));
         }
-        return ResponseEntity.ok(posts);
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.maxAge(600, TimeUnit.SECONDS).cachePublic())
+                .body(posts);
     }
 
     @PostMapping
